@@ -1,5 +1,6 @@
 <script lang="ts">
 	import logo from '$lib/assets/logo.svg';
+	import GetInjuryPayForm from '$lib/components/get-injury-pay-form.svelte';
 </script>
 
 <div
@@ -36,11 +37,8 @@
 			determine how we can assist you in achieving the compensation you deserve
 		</div>
 
-		<div class="bde-fancy-divider w-full max-w-md">
-			<div class="bde-fancy-divider__wrapper">
-				<div class="bde-fancy-divider__separator border-t border-white w-full"></div>
-			</div>
-		</div>
+	
+        <GetInjuryPayForm />
 	</div>
 </div>
 

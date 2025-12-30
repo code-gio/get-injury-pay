@@ -12,7 +12,7 @@
 </script>
 
 {#if flowForm.fields.length > 0}
-	<div class="flex h-dvh flex-col">
+	<div class="flex  flex-col bg-background p-4 rounded-lg">
 		<Header />
 		<FormContainer />
 	</div>

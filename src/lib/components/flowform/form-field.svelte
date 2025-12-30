@@ -1,29 +1,91 @@
 <script lang="ts">
 	import { FieldType, type Field } from '$lib/types/field.js';
-	import { ArrowRight, Check, Loader2 } from 'lucide-svelte';
+	import { ArrowRight, Check, Loader2, ArrowLeft } from '@lucide/svelte';
 	import FieldHandler from './field-handler.svelte';
 	import Button from '../ui/button/button.svelte';
 	import { flowForm } from './flowform.svelte.js';
+	import * as FormField from '$lib/components/ui/field/index.js';
 	let { field, i }: { field: Field; i: number } = $props();
 	import { getEmblaContext } from '../ui/carousel/context';
 
-	const { scrollNext } = getEmblaContext('<Carousel.Next/>');
+	const { scrollNext, scrollPrev } = getEmblaContext('<Carousel.Next/>');
 
 	const isLastQuestion = $derived(i === flowForm.fields.length - 1);
+	const isFirstQuestion = $derived(i === 0);
 	let isSubmitting = $state(false);
 	let submitError = $state<string | null>(null);
+	let fieldError = $state<string | null>(null);
+	let showCheck = $state(false);
+	let isContinuing = $state(false);
+
+	// Check if current field has an answer
+	const hasAnswer = $derived(() => {
+		const answer = flowForm.answers[field.id];
+		// For contact fields, check all sub-fields
+		if (field.type === FieldType.Contact) {
+			return (
+				flowForm.answers[`${field.id}_firstName`] &&
+				flowForm.answers[`${field.id}_lastName`] &&
+				flowForm.answers[`${field.id}_phone`] &&
+				flowForm.answers[`${field.id}_email`]
+			);
+		}
+		return answer !== undefined && answer !== null && answer !== '';
+	});
+
+	const canContinue = $derived(() => {
+		if (!field.isRequired) return true;
+		return hasAnswer();
+	});
+
+	// Clear error when answer is provided
+	$effect(() => {
+		if (hasAnswer() && fieldError) {
+			fieldError = null;
+		}
+	});
 
 	function handleContinue() {
+		fieldError = null;
+		
+		if (!canContinue()) {
+			fieldError = field.isRequired
+				? 'Please answer this question before continuing.'
+				: 'Please provide an answer.';
+			return;
+		}
+
+		// Show check animation
+		showCheck = true;
+		isContinuing = true;
+
 		if (isLastQuestion) {
 			const { valid, errors } = flowForm.validateRequiredForSubmission();
 			if (valid) {
-				// TODO: Handle form submission
+				handleSubmit();
 			} else {
-				console.error('Validation errors:', errors);
+				fieldError = Object.values(errors)[0] || 'Please complete all required fields.';
+				showCheck = false;
+				isContinuing = false;
 			}
 		} else {
-			scrollNext();
+			// Small delay to show check animation before scrolling
+			setTimeout(() => {
+				scrollNext();
+				// Reset animation state after transition
+				setTimeout(() => {
+					showCheck = false;
+					isContinuing = false;
+				}, 300);
+			}, 300);
 		}
+	}
+
+	function handleBack() {
+		showCheck = false;
+		isContinuing = false;
+		fieldError = null;
+		scrollPrev();
 	}
 
 	async function handleSubmit() {
@@ -62,74 +124,91 @@
 	}
 </script>
 
-<div class="f mx-auto w-full max-w-3xl space-y-4 p-6">
-	<div class="space-y-2">
-		<div class="flex items-start gap-2 text-lg md:text-2xl lg:text-3xl">
+<div class="mx-auto w-full max-w-3xl space-y-4 p-6">
+	<FormField.Set>
+		<div class="flex items-start gap-2 text-lg md:text-2xl lg:text-3xl ">
 			<div class="mt-1 flex items-center text-lg font-semibold md:text-xl">
 				{i + 1}
 				<ArrowRight class="size-4" />
 			</div>
-
-			{#if field.type === FieldType.Checkbox || field.type === FieldType.Rating}
+			<FormField.Legend>
 				{field.label}
-			{:else}
-				<label for={field.id}>{field.label}</label>
-			{/if}
-			{#if field.isRequired}
-				<div class="text-red-500">*</div>
-			{/if}
-		</div>
-	</div>
-	<div class="space-y-5 px-9">
-		<div>
-			<FieldHandler {field} />
-			{#if field.helperText}
-				<div class="mt-2 text-sm text-gray-500">{field.helperText}</div>
-			{/if}
+				{#if field.isRequired}
+					<span class="text-red-500">*</span>
+				{/if}
+			</FormField.Legend>
 		</div>
 
-		<div class="flex gap-4">
+		{#if field.helperText}
+			<FormField.Description>{field.helperText}</FormField.Description>
+		{/if}
+
+		<FormField.Field data-invalid={fieldError !== null}>
+			<FieldHandler {field} />
+			{#if fieldError}
+				<FormField.Error>{fieldError}</FormField.Error>
+			{/if}
+			{#if submitError}
+				<FormField.Error>{submitError}</FormField.Error>
+			{/if}
+		</FormField.Field>
+
+		<FormField.Field orientation="horizontal" class="flex items-center gap-2">
+			{#if !isFirstQuestion}
+				<Button
+					size="lg"
+					variant="outline"
+					class="gap-2 text-lg font-normal"
+					onclick={handleBack}
+					disabled={isContinuing || isSubmitting}
+				>
+					<ArrowLeft class="size-4" />
+					Back
+				</Button>
+			{/if}
+			<div class="" />
 			{#if !isLastQuestion}
-				<Button size="lg" class="gap-2 text-lg font-normal" onclick={handleContinue}>
-					Continue
-					<Check />
+				<Button
+					size="lg"
+					class="gap-2 text-lg font-normal relative overflow-hidden"
+					onclick={handleContinue}
+					disabled={!canContinue() || isContinuing}
+				>
+					<span class="flex items-center gap-2">
+						Continue
+						{#if showCheck}
+							<Check
+								class="size-4 animate-in fade-in zoom-in duration-300"
+								style="animation-delay: 0.1s;"
+							/>
+						{/if}
+					</span>
 				</Button>
 			{/if}
 			{#if isLastQuestion}
-				{#if submitError}
-					<div class="mb-4 w-full rounded-md border border-red-200 bg-red-50 p-4">
-						<div class="flex">
-							<div class="flex-shrink-0">
-								<svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-									<path
-										fill-rule="evenodd"
-										d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-							</div>
-							<div class="ml-3">
-								<p class="text-sm text-red-800">{submitError}</p>
-							</div>
-						</div>
-					</div>
-				{/if}
 				<Button
 					size="lg"
-					class="pointer gap-2 text-lg font-normal"
-					onclick={handleSubmit}
-					disabled={isSubmitting}
+					class="gap-2 text-lg font-normal"
+					onclick={handleContinue}
+					disabled={isSubmitting || !canContinue() || isContinuing}
 				>
 					{#if isSubmitting}
 						<Loader2 class="size-4 animate-spin" />
 						Submitting...
 					{:else}
-						Submit
-						<Check />
+						<span class="flex items-center gap-2">
+							Submit
+							{#if showCheck}
+								<Check
+									class="size-4 animate-in fade-in zoom-in duration-300"
+									style="animation-delay: 0.1s;"
+								/>
+							{/if}
+						</span>
 					{/if}
 				</Button>
 			{/if}
-		</div>
-	</div>
+		</FormField.Field>
+	</FormField.Set>
 </div>
 

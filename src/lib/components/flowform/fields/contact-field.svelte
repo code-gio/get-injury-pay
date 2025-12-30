@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
 	import { flowForm } from '../flowform.svelte.js';
 	import { getEmblaContext } from '$lib/components/ui/carousel/context.js';
 	import type { Field } from '$lib/types/field.js';
+	import * as FormField from '$lib/components/ui/field/index.js';
 
 	let { field }: { field: Field } = $props();
 	const { scrollNext } = getEmblaContext('<Carousel.Next/>');
@@ -14,45 +14,49 @@
 	}
 </script>
 
-<div class="flex w-full max-w-2xl flex-col gap-4">
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="flex flex-col gap-1.5">
-			<Label for="first-name">First Name</Label>
+<FormField.Group class="w-full max-w-2xl">
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+		<FormField.Field>
+			<FormField.Label for="first-name">First Name</FormField.Label>
 			<Input
 				type="text"
 				id="first-name"
 				placeholder="First Name"
 				oninput={(e) => handleInputChange(e, `${field.id}_firstName`)}
 			/>
-		</div>
-		<div class="flex flex-col gap-1.5">
-			<Label for="last-name">Last Name</Label>
+		</FormField.Field>
+		<FormField.Field>
+			<FormField.Label for="last-name">Last Name</FormField.Label>
 			<Input
 				type="text"
 				id="last-name"
 				placeholder="Last Name"
 				oninput={(e) => handleInputChange(e, `${field.id}_lastName`)}
 			/>
-		</div>
+		</FormField.Field>
 	</div>
-	<div class="flex flex-col gap-1.5">
-		<Label for="phone">Phone Number</Label>
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+	<FormField.Field>
+		<FormField.Label for="phone">Phone Number</FormField.Label>
 		<Input
 			type="tel"
 			id="phone"
 			placeholder="Phone Number"
 			oninput={(e) => handleInputChange(e, `${field.id}_phone`)}
 		/>
-	</div>
+	</FormField.Field>
 
-	<div class="flex flex-col gap-1.5">
-		<Label for="email">Email</Label>
+	<FormField.Field>
+		<FormField.Label for="email">Email</FormField.Label>
 		<Input
 			type="email"
 			id="email"
 			placeholder="Email"
 			oninput={(e) => handleInputChange(e, `${field.id}_email`)}
 		/>
-	</div>
+	</FormField.Field>
 </div>
+
+</FormField.Group>
 
