@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { FieldType, type Field } from '$lib/types/field.js';
-	import { ArrowRight, Check, Loader2, ArrowLeft } from '@lucide/svelte';
+	import { ArrowRight, Check, Loader2, ArrowLeft, CheckCircle2 } from '@lucide/svelte';
 	import FieldHandler from './field-handler.svelte';
 	import Button from '../ui/button/button.svelte';
 	import { flowForm } from './flowform.svelte.js';
@@ -13,6 +13,7 @@
 	const isLastQuestion = $derived(i === flowForm.fields.length - 1);
 	const isFirstQuestion = $derived(i === 0);
 	let isSubmitting = $state(false);
+	let isComplete = $state(false);
 	let submitError = $state<string | null>(null);
 	let fieldError = $state<string | null>(null);
 	let showCheck = $state(false);
@@ -89,10 +90,11 @@
 	}
 
 	async function handleSubmit() {
-		if (isSubmitting) return;
+		if (isSubmitting || isComplete) return;
 
 		isSubmitting = true;
 		submitError = null; // Clear any previous errors
+		showCheck = true;
 
 		try {
 			const response = await fetch(
@@ -108,96 +110,99 @@
 
 			if (response.ok) {
 				console.log('Form data sent successfully');
+				// Show completion animation
+				isSubmitting = false;
+				isComplete = true;
+				
+				// Redirect after showing completion animation
 				setTimeout(() => {
 					window.location.href = 'https://getinjurypay.com/thank-you';
-				}, 1000);
+				}, 2000);
 			} else {
 				console.error('Failed to send form data:', response.status, response.statusText);
 				submitError = `Failed to submit form. Please try again. (Error: ${response.status})`;
+				isSubmitting = false;
+				showCheck = false;
 			}
 		} catch (error) {
 			console.error('Error sending form data:', error);
 			submitError = 'Network error. Please check your connection and try again.';
-		} finally {
 			isSubmitting = false;
+			showCheck = false;
 		}
 	}
 </script>
 
-<div class="mx-auto w-full max-w-3xl space-y-4 p-6">
-	<FormField.Set>
-		<div class="flex items-start gap-2 text-lg md:text-2xl lg:text-3xl ">
-			<div class="mt-1 flex items-center text-lg font-semibold md:text-xl">
-				{i + 1}
-				<ArrowRight class="size-4" />
+{#if isComplete && isLastQuestion}
+	<!-- Completion State -->
+	<div class="mx-auto w-full max-w-3xl space-y-4 p-6">
+		<div class="flex flex-col items-center justify-center space-y-6 py-12 animate-in fade-in zoom-in duration-500">
+			<div class="relative">
+				<div class="absolute inset-0 bg-primary/20 rounded-full animate-ping"></div>
+				<CheckCircle2
+					class="size-20 text-primary animate-in zoom-in duration-500 relative"
+					stroke-width={2}
+				/>
 			</div>
-			<FormField.Legend>
-				{field.label}
-				{#if field.isRequired}
-					<span class="text-red-500">*</span>
-				{/if}
-			</FormField.Legend>
+			<div class="text-center space-y-2">
+				<h2 class="text-3xl font-bold text-white">Form Submitted Successfully!</h2>
+				<p class="text-lg text-white/80">Thank you for your submission. Redirecting...</p>
+			</div>
 		</div>
+	</div>
+{:else}
+	<div class="mx-auto w-full max-w-3xl space-y-4 p-6">
+		<FormField.Set>
+			<div class="flex items-start gap-2 text-lg md:text-2xl lg:text-3xl ">
+				<div class="mt-1 flex items-center text-lg font-semibold md:text-xl">
+					{i + 1}
+					<ArrowRight class="size-4" />
+				</div>
+				<FormField.Legend>
+					{field.label}
+					{#if field.isRequired}
+						<span class="text-red-500">*</span>
+					{/if}
+				</FormField.Legend>
+			</div>
 
-		{#if field.helperText}
-			<FormField.Description>{field.helperText}</FormField.Description>
-		{/if}
+			{#if field.helperText}
+				<FormField.Description>{field.helperText}</FormField.Description>
+			{/if}
 
-		<FormField.Field data-invalid={fieldError !== null}>
-			<FieldHandler {field} />
-			{#if fieldError}
-				<FormField.Error>{fieldError}</FormField.Error>
-			{/if}
-			{#if submitError}
-				<FormField.Error>{submitError}</FormField.Error>
-			{/if}
-		</FormField.Field>
+			<FormField.Field data-invalid={fieldError !== null}>
+				<FieldHandler {field} />
+				{#if fieldError}
+					<FormField.Error>{fieldError}</FormField.Error>
+				{/if}
+				{#if submitError}
+					<FormField.Error>{submitError}</FormField.Error>
+				{/if}
+			</FormField.Field>
 
-		<FormField.Field orientation="horizontal" class="flex items-center gap-2">
-			{#if !isFirstQuestion}
-				<Button
-					size="lg"
-					variant="outline"
-					class="gap-2 text-lg font-normal"
-					onclick={handleBack}
-					disabled={isContinuing || isSubmitting}
-				>
-					<ArrowLeft class="size-4" />
-					Back
-				</Button>
-			{/if}
-			<div class="" />
-			{#if !isLastQuestion}
-				<Button
-					size="lg"
-					class="gap-2 text-lg font-normal relative overflow-hidden"
-					onclick={handleContinue}
-					disabled={!canContinue() || isContinuing}
-				>
-					<span class="flex items-center gap-2">
-						Continue
-						{#if showCheck}
-							<Check
-								class="size-4 animate-in fade-in zoom-in duration-300"
-								style="animation-delay: 0.1s;"
-							/>
-						{/if}
-					</span>
-				</Button>
-			{/if}
-			{#if isLastQuestion}
-				<Button
-					size="lg"
-					class="gap-2 text-lg font-normal"
-					onclick={handleContinue}
-					disabled={isSubmitting || !canContinue() || isContinuing}
-				>
-					{#if isSubmitting}
-						<Loader2 class="size-4 animate-spin" />
-						Submitting...
-					{:else}
+			<FormField.Field orientation="horizontal" class="flex items-center gap-2">
+				{#if !isFirstQuestion}
+					<Button
+						size="lg"
+						variant="outline"
+						class="gap-2 text-lg font-normal"
+						onclick={handleBack}
+						disabled={isContinuing || isSubmitting || isComplete}
+					>
+						<ArrowLeft class="size-4" />
+						Back
+					</Button>
+				{/if}
+				<div class=""></div>
+				{#if !isLastQuestion}
+					<Button
+						size="lg"
+						class="gap-2 text-lg font-normal relative overflow-hidden"
+						onclick={handleContinue}
+						disabled={!canContinue() || isContinuing || isComplete}
+					>
 						<span class="flex items-center gap-2">
-							Submit
+							Continue
 							{#if showCheck}
 								<Check
 									class="size-4 animate-in fade-in zoom-in duration-300"
@@ -205,10 +210,36 @@
 								/>
 							{/if}
 						</span>
-					{/if}
-				</Button>
-			{/if}
-		</FormField.Field>
-	</FormField.Set>
-</div>
+					</Button>
+				{/if}
+				{#if isLastQuestion}
+					<Button
+						size="lg"
+						class="gap-2 text-lg font-normal"
+						onclick={handleContinue}
+						disabled={isSubmitting || !canContinue() || isContinuing || isComplete}
+					>
+						{#if isSubmitting}
+							<Loader2 class="size-4 animate-spin" />
+							Submitting...
+						{:else if isComplete}
+							<CheckCircle2 class="size-4" />
+							Submitted
+						{:else}
+							<span class="flex items-center gap-2">
+								Submit
+								{#if showCheck}
+									<Check
+										class="size-4 animate-in fade-in zoom-in duration-300"
+										style="animation-delay: 0.1s;"
+									/>
+								{/if}
+							</span>
+						{/if}
+					</Button>
+				{/if}
+			</FormField.Field>
+		</FormField.Set>
+	</div>
+{/if}
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import { flowForm } from './flowform.svelte.js';
-	import Footer from './footer.svelte';
 	import FormField from './form-field.svelte';
 	import { type CarouselAPI } from '$lib/components/ui/carousel/context.js';
 
@@ -35,6 +34,5 @@
 			{/each}
 		</Carousel.Content>
 	</div>
-	<Footer />
 </Carousel.Root>
 
