@@ -1,0 +1,26 @@
+<script lang="ts">
+	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { flowForm } from '../flowform.svelte.js';
+	import type { Field } from '$lib/types/field.js';
+	import { getEmblaContext } from '../../ui/carousel/context';
+
+	const { scrollNext } = getEmblaContext('<Carousel.Next/>');
+
+	let { field }: { field: Field } = $props();
+</script>
+
+<Textarea
+	id={field.id}
+	required={field.isRequired}
+	placeholder={field.placeholder}
+	onkeydown={(e) => {
+		if (e.key === 'Enter') {
+			scrollNext();
+		}
+	}}
+	oninput={(e) => {
+		flowForm.setAnswer(field.id, (e.target as HTMLTextAreaElement).value);
+		console.log(flowForm.answers);
+	}}
+/>
+
