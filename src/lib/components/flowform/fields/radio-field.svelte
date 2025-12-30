@@ -12,7 +12,6 @@
 
 	function handleClick(option: { value: string; label: string }) {
 		flowForm.setAnswer(field.id, option.value);
-		console.log(flowForm.answers);
 		// Auto-continue after a short delay
 		setTimeout(() => {
 			scrollNext();

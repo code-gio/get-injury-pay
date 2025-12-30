@@ -21,10 +21,9 @@
 				scrollNext();
 			}
 		}}
-		oninput={(e) => {
-			flowForm.setAnswer(field.id, (e.target as HTMLTextAreaElement).value);
-			console.log(flowForm.answers);
-		}}
+	oninput={(e) => {
+		flowForm.setAnswer(field.id, (e.target as HTMLTextAreaElement).value);
+	}}
 	/>
 </FormField.Field>
 

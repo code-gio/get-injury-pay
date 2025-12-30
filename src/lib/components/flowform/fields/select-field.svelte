@@ -63,9 +63,7 @@
 			required={field.isRequired}
 			bind:value
 			onValueChange={(v) => {
-				console.log(v);
 				flowForm.setAnswer(field.id, v);
-				console.log(flowForm.answers);
 				// Auto-continue after a short delay
 				setTimeout(() => {
 					scrollNext();

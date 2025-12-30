@@ -92,6 +92,8 @@
 	async function handleSubmit() {
 		if (isSubmitting || isComplete) return;
 
+		console.log('Submit button clicked', flowForm.getAnswers());
+
 		isSubmitting = true;
 		submitError = null; // Clear any previous errors
 		showCheck = true;
@@ -109,7 +111,6 @@
 			);
 
 			if (response.ok) {
-				console.log('Form data sent successfully');
 				// Show completion animation
 				isSubmitting = false;
 				isComplete = true;
@@ -119,13 +120,11 @@
 					window.location.href = 'https://getinjurypay.com/thank-you';
 				}, 2000);
 			} else {
-				console.error('Failed to send form data:', response.status, response.statusText);
 				submitError = `Failed to submit form. Please try again. (Error: ${response.status})`;
 				isSubmitting = false;
 				showCheck = false;
 			}
 		} catch (error) {
-			console.error('Error sending form data:', error);
 			submitError = 'Network error. Please check your connection and try again.';
 			isSubmitting = false;
 			showCheck = false;
